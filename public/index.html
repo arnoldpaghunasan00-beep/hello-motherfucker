@@ -10,7 +10,7 @@
   <h1>Simple Social Media</h1>
 
   <!-- Upload Form -->
-  <form action="/upload" method="post" enctype="multipart/form-data">
+  <form action="/create" method="post" enctype="multipart/form-data">
     <input type="file" name="image" required><br><br>
     <input type="text" name="caption" placeholder="Caption"><br><br>
     <button type="submit">Post</button>
@@ -22,31 +22,16 @@
   <div id="posts"></div>
 
   <script>
-    async function loadPosts() {
-      const res = await fetch('/posts');
-      const data = await res.json();
-
-      const container = document.getElementById('posts');
-      container.innerHTML = '';
-
-      data.forEach(post => {
-        container.innerHTML += `
-          <div>
-            <img src="/uploads/${post.image}" width="200"><br>
-            <p>${post.caption}</p>
-            <button onclick="deletePost(${post.id})">Delete</button>
-          </div>
-          <hr>
-        `;
+    fetch('/create')
+      .then(response => response.json())
+      .then(data => {
+        const posts = document.getElementById('posts');
+        data.forEach(user => {
+          posts.innerHTML += `
+            <img src="/uploads/${user.image}" width="300" height="auto"/>
+          `;
+        });
       });
-    }
-
-    async function deletePost(id) {
-      await fetch('/delete/' + id, { method: 'POST' });
-      loadPosts();
-    }
-
-    loadPosts();
   </script>
 
 </body>

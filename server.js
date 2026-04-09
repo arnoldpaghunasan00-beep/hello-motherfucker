@@ -13,9 +13,7 @@ app.use('/uploads', express.static('uploads'));
 
 // ✅ multer setup (image upload)
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
+  destination: 'public/uploads',
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
   }
@@ -47,8 +45,8 @@ app.get('/', (req, res) => {
 
 // ✅ get all posts
 app.get('/posts', (req, res) => {
-  db.query("SELECT * FROM posts ORDER BY id DESC", (err, results) => {
-    if (err) return res.json([]);
+  db.query("SELECT id, image, caption FROM posts", (err, results) => {
+    if (err) throw err;
     res.json(results);
   });
 });
@@ -56,16 +54,10 @@ app.get('/posts', (req, res) => {
 // ✅ create post (image + caption)
 app.post('/create', upload.single('image'), (req, res) => {
   const caption = req.body.caption;
-  const image = req.file ? '/uploads/' + req.file.filename : null;
+  const image = req.file.image;
 
-  if (!caption || !image) {
-    return res.send("Missing caption or image");
-  }
 
-  db.query(
-    "INSERT INTO posts (image, caption) VALUES (?, ?)",
-    [image, caption],
-    (err) => {
+  db.query("INSERT INTO posts (image, caption) VALUES (?, ?)", [image, caption], (err) => {
       if (err) {
         console.error(err);
         return res.send("Database error");
