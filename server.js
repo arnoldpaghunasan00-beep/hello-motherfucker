@@ -1,21 +1,66 @@
+require('dotenv').config();
+console.log("HOST:", process.env.MYSQLHOST);
 const express = require('express');
 const mysql = require('mysql2');
-const path  =require('path');
-const bcrypt = require('bcrypt');
-const multer = require('multer');
-const fs = require('fs');
+const path = require('path');
+
 const app = express();
 
-app.use(express.urlencoded({extended: true}));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(express.static('public'));
 
-app.post('/', (req, res) => {
-    res.sendFile(__dirname + '/public/index.html');
+// ✅ CHANGE: use createPool (more stable)
+const db = mysql.createPool({
+  host: process.env.MYSQLHOST,
+  user: process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE,
+  port: process.env.MYSQLPORT,
+  ssl: {
+    minVersion: 'TLSv1.2',
+    rejectUnauthorized: false
+  },
+  connectTimeout: 20000
+});
+
+// ✅ SIMPLE TEST (replace db.connect)
+db.query("SELECT 1", (err) => {
+  if (err) {
+    console.log("❌ FAILED:", err);
+  } else {
+    console.log("✅ CONNECTED TO MYSQL");
+  }
+});
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/index.html'));
+});
+
+app.post('/create', (req, res) => {
+  let name = req.body.name;
+
+  if (!name) {
+    return res.send("Invalid syntax, please try again");
+  }
+
+  name = name.replace(/[^a-zA-Z0-9_ ]/g, '');
+
+  db.query(
+    "INSERT INTO user (username) VALUES (?)",
+    [name],
+    (err) => {
+      if (err) {
+        console.error(err);
+        return res.send("Database error");
+      }
+      res.redirect('/');
+    }
+  );
 });
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
