@@ -43,18 +43,10 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-// ✅ get all posts
-app.get('/posts', (req, res) => {
-  db.query("SELECT id, image, caption FROM posts", (err, results) => {
-    if (err) throw err;
-    res.json(results);
-  });
-});
-
 // ✅ create post (image + caption)
 app.post('/create', upload.single('image'), (req, res) => {
   const caption = req.body.caption;
-  const image = req.file.image;
+  const image = req.file.filename;
 
 
   db.query("INSERT INTO posts (image, caption) VALUES (?, ?)", [image, caption], (err) => {
@@ -66,6 +58,15 @@ app.post('/create', upload.single('image'), (req, res) => {
     }
   );
 });
+
+// ✅ get all posts
+app.get('/posts', (req, res) => {
+  db.query("SELECT id, image, caption FROM posts", (err, results) => {
+    if (err) throw err;
+    res.json(results);
+  });
+});
+
 
 // ✅ delete post
 app.post('/delete/:id', (req, res) => {
