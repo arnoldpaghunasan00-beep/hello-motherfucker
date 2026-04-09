@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(express.static('public'));
 app.use('/uploads', express.static('public/uploads'));
 
-// ✅ multer setup (image upload)
+// multer setup
 const storage = multer.diskStorage({
   destination: 'public/uploads',
   filename: (req, file, cb) => {
@@ -21,35 +21,29 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// ✅ MySQL connection (Railway)
-const db = mysql.createPool({
-  uri: process.env.MYSQL_PUBLIC_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
-});
+// MySQL connection
+const db = mysql.createPool(process.env.MYSQL_PUBLIC_URL);
 
 // test connection
 db.query("SELECT 1", (err) => {
-  if (err) {
-    console.log("❌ DB FAILED:", err);
-  } else {
-    console.log("✅ CONNECTED TO MYSQL");
-  }
+  if (err) console.log("❌ DB FAILED:", err);
+  else console.log("✅ CONNECTED TO MYSQL");
 });
 
-// serve homepage
+// homepage
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-// ✅ create post (image + caption)
+// create product
 app.post('/create', upload.single('image'), (req, res) => {
-  const caption = req.body.caption;
-  const image = req.file.filename;
+  const price = req.body.caption;
+  const image = req.file ? req.file.filename : null;
 
-
-  db.query("INSERT INTO posts (image, caption) VALUES (?, ?)", [image, caption], (err) => {
+  db.query(
+    "INSERT INTO posts (image, caption) VALUES (?, ?)",
+    [image, price],
+    (err) => {
       if (err) {
         console.error(err);
         return res.send("Database error");
@@ -59,7 +53,7 @@ app.post('/create', upload.single('image'), (req, res) => {
   );
 });
 
-// ✅ get all posts
+// get products
 app.get('/posts', (req, res) => {
   db.query("SELECT id, image, caption FROM posts", (err, results) => {
     if (err) throw err;
@@ -67,23 +61,20 @@ app.get('/posts', (req, res) => {
   });
 });
 
-
-// ✅ delete post
-app.post('/delete/:id', (req, res) => {
+// delete product (AJAX)
+app.delete('/delete/:id', (req, res) => {
   const id = req.params.id;
 
   db.query("DELETE FROM posts WHERE id = ?", [id], (err) => {
     if (err) {
       console.error(err);
-      return res.send("Delete failed", err);
+      return res.send("Delete failed");
     }
-    res.redirect('/');
+    res.send("Deleted");
   });
 });
 
-// server
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
