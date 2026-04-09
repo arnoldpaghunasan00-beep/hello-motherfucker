@@ -32,17 +32,20 @@ app.get('/', (req, res) => {
 });
 
 app.post('/create', (req, res) => {
-  let name = req.body.name;
+  let {name, password} = req.body;
 
-  if (!name) {
+    name = name.replace(/[^a-zA-Z0-9_ ]/g, '');
+    password = password.replace(/[^a-zA-Z0-9_ ]/g, '');
+
+  if (!name||!password) {
     return res.send("Invalid syntax, please try again");
   }
 
-  name = name.replace(/[^a-zA-Z0-9_ ]/g, '');
+ 
 
   db.query(
-    "INSERT INTO user (username) VALUES (?)",
-    [name],
+    "INSERT INTO user (username, password) VALUES (?, ?)",
+    [name, password],
     (err) => {
       if (err) {
         console.error(err);
