@@ -1,54 +1,70 @@
 const express = require('express');
 const mysql = require('mysql2');
 const path = require('path');
-const bcrypt = require('bcrypt');
-console.log("HOST:", process.env.MYSQLHOST);
+const multer = require('multer');
 
 const app = express();
 
+// middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
+app.use('/uploads', express.static('uploads'));
 
-// ✅ CHANGE: use createPool (more stable)
+// ✅ multer setup (image upload)
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage });
+
+// ✅ MySQL connection (Railway)
 const db = mysql.createPool({
   uri: process.env.MYSQL_PUBLIC_URL,
   ssl: {
     rejectUnauthorized: false
-  },
-  connectTimeout: 10000
+  }
 });
 
-// ✅ SIMPLE TEST (replace db.connect)
+// test connection
 db.query("SELECT 1", (err) => {
   if (err) {
-    console.log("❌ FAILED:", err);
+    console.log("❌ DB FAILED:", err);
   } else {
     console.log("✅ CONNECTED TO MYSQL");
   }
 });
 
+// serve homepage
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-app.post('/create', async (req, res) => {
-  let {name, password} = req.body;
+// ✅ get all posts
+app.get('/posts', (req, res) => {
+  db.query("SELECT * FROM posts ORDER BY id DESC", (err, results) => {
+    if (err) return res.json([]);
+    res.json(results);
+  });
+});
 
-    name = name.replace(/[^a-zA-Z0-9_ ]/g, '');
-    password = password.replace(/[^a-zA-Z0-9_ ]/g, '');
+// ✅ create post (image + caption)
+app.post('/create', upload.single('image'), (req, res) => {
+  const caption = req.body.caption;
+  const image = req.file ? '/uploads/' + req.file.filename : null;
 
-    const securedPassword = await bcrypt.hash(password, 10);
-
-  if (!name||!password) {
-    return res.send("Invalid syntax, please try again");
+  if (!caption || !image) {
+    return res.send("Missing caption or image");
   }
 
- 
-
   db.query(
-    "INSERT INTO user (username, password) VALUES (?, ?)",
-    [name, securedPassword],
+    "INSERT INTO posts (image, caption) VALUES (?, ?)",
+    [image, caption],
     (err) => {
       if (err) {
         console.error(err);
@@ -59,8 +75,22 @@ app.post('/create', async (req, res) => {
   );
 });
 
+// ✅ delete post
+app.post('/delete/:id', (req, res) => {
+  const id = req.params.id;
+
+  db.query("DELETE FROM posts WHERE id = ?", [id], (err) => {
+    if (err) {
+      console.error(err);
+      return res.send("Delete failed");
+    }
+    res.redirect('/');
+  });
+});
+
+// server
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });

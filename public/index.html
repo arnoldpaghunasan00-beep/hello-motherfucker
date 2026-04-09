@@ -1,21 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Document</title>
-    </head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Social Media</title>
+</head>
+<body>
 
-    <body>
-        <h1>
-            Hello Mother Fucker
-        </h1>
-        <form action="/create" method="post">
-            <input type="text" name="name" placeholder="Enter your name" required/>
-            <br>
-            <input type="text" name="password" placeholder="Enter your password" required/>
-            <br>
-            <input type="submit" value="Enter"/>
-        </form>
-    </body>
+  <h1>Simple Social Media</h1>
+
+  <!-- Upload Form -->
+  <form action="/upload" method="post" enctype="multipart/form-data">
+    <input type="file" name="image" required><br><br>
+    <input type="text" name="caption" placeholder="Caption"><br><br>
+    <button type="submit">Post</button>
+  </form>
+
+  <hr>
+
+  <!-- Posts will load here -->
+  <div id="posts"></div>
+
+  <script>
+    async function loadPosts() {
+      const res = await fetch('/posts');
+      const data = await res.json();
+
+      const container = document.getElementById('posts');
+      container.innerHTML = '';
+
+      data.forEach(post => {
+        container.innerHTML += `
+          <div>
+            <img src="/uploads/${post.image}" width="200"><br>
+            <p>${post.caption}</p>
+            <button onclick="deletePost(${post.id})">Delete</button>
+          </div>
+          <hr>
+        `;
+      });
+    }
+
+    async function deletePost(id) {
+      await fetch('/delete/' + id, { method: 'POST' });
+      loadPosts();
+    }
+
+    loadPosts();
+  </script>
+
+</body>
 </html>
