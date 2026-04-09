@@ -82,7 +82,7 @@ app.post('/delete/:id', (req, res) => {
   db.query("DELETE FROM posts WHERE id = ?", [id], (err) => {
     if (err) {
       console.error(err);
-      return res.send("Delete failed");
+      return res.send("Delete failed", err);
     }
     res.redirect('/');
   });
