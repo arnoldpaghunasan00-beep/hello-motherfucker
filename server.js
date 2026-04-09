@@ -1,5 +1,4 @@
 require('dotenv').config();
-console.log("HOST:", process.env.MYSQLHOST);
 const express = require('express');
 const mysql = require('mysql2');
 const path = require('path');
@@ -16,12 +15,7 @@ const db = mysql.createPool({
   user: process.env.MYSQLUSER,
   password: process.env.MYSQLPASSWORD,
   database: process.env.MYSQLDATABASE,
-  port: process.env.MYSQLPORT,
-  ssl: {
-    minVersion: 'TLSv1.2',
-    rejectUnauthorized: false
-  },
-  connectTimeout: 20000
+  port: process.env.MYSQLPORT
 });
 
 // ✅ SIMPLE TEST (replace db.connect)
@@ -61,6 +55,6 @@ app.post('/create', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
