@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2');
 const path = require('path');
+console.log("HOST:", process.env.MYSQLHOST);
 
 const app = express();
 
@@ -10,11 +11,11 @@ app.use(express.static('public'));
 
 // ✅ CHANGE: use createPool (more stable)
 const db = mysql.createPool({
-  host: process.env.MYSQLHOST,
-  user: process.env.MYSQLUSER,
-  password: process.env.MYSQLPASSWORD,
-  database: process.env.MYSQLDATABASE,
-  port: process.env.MYSQLPORT
+  uri: process.env.MYSQL_PUBLIC_URL,
+  ssl: {
+    rejectUnauthorized: false
+  },
+  connectTimeout: 10000
 });
 
 // ✅ SIMPLE TEST (replace db.connect)
