@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2');
 const path = require('path');
+const bcrypt = require('bcrypt');
 console.log("HOST:", process.env.MYSQLHOST);
 
 const app = express();
@@ -31,11 +32,13 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-app.post('/create', (req, res) => {
+app.post('/create', async (req, res) => {
   let {name, password} = req.body;
 
     name = name.replace(/[^a-zA-Z0-9_ ]/g, '');
     password = password.replace(/[^a-zA-Z0-9_ ]/g, '');
+
+    const securedPassword = await bcrypt(password, 10);
 
   if (!name||!password) {
     return res.send("Invalid syntax, please try again");
@@ -45,7 +48,7 @@ app.post('/create', (req, res) => {
 
   db.query(
     "INSERT INTO user (username, password) VALUES (?, ?)",
-    [name, password],
+    [name, securedPassword],
     (err) => {
       if (err) {
         console.error(err);
