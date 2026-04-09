@@ -38,7 +38,7 @@ app.post('/create', async (req, res) => {
     name = name.replace(/[^a-zA-Z0-9_ ]/g, '');
     password = password.replace(/[^a-zA-Z0-9_ ]/g, '');
 
-    const securedPassword = await bcrypt(password, 10);
+    const securedPassword = await bcrypt.hash(password, 10);
 
   if (!name||!password) {
     return res.send("Invalid syntax, please try again");
